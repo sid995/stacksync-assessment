@@ -29,7 +29,7 @@ RUN env -u BUILD make && strip nsjail
 FROM python:3.11-slim
 
 ARG BUILD
-ENV BUILD=${BUILD}
+ENV BUILD=cloud
 
 WORKDIR /app
 
@@ -43,9 +43,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   rm -rf /var/lib/apt/lists/*
 
 # Install Python requirements
-COPY requirements.txt requirements.txt
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
 
 # ------------------
 # Cloud-only sandbox setup

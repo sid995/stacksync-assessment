@@ -22,7 +22,8 @@ IS_CLOUD = os.environ.get("BUILD") == "cloud"
 SCRIPT_TIMEOUT = int(os.environ.get("SCRIPT_TIMEOUT", "10"))
 MAX_SCRIPT_SIZE = int(os.environ.get("MAX_SCRIPT_SIZE", "10000"))  # 10KB max
 
-SCRIPT_PATH = "/sandbox/tmp/script.py" if IS_CLOUD else "/tmp/script.py"
+# SCRIPT_PATH = "/sandbox/tmp/script.py" if IS_CLOUD else "/tmp/script.py"
+SCRIPT_PATH = "/sandbox/tmp/script.py"
 
 
 def validate_script(script_content: str) -> Tuple[bool, Optional[str]]:
@@ -126,7 +127,17 @@ if __name__ == "__main__":
 
         # Execute script based on environment
         if IS_CLOUD:
-            cmd = ["nsjail", "--config", NSJAIL_CONFIG_PATH, "--"]
+            # Use nsjail with config and pass python command explicitly
+            cmd = [
+                "nsjail",
+                "--config",
+                NSJAIL_CONFIG_PATH,
+                "--chroot",
+                "/sandbox",
+                "--",
+                "/usr/local/bin/python3",
+                "/tmp/script.py",
+            ]
             logger.info("Executing script with nsjail in cloud environment")
         else:
             cmd = ["python3", script_path]

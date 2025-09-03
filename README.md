@@ -2,12 +2,17 @@
 
 A small full‑stack project that safely executes user‑submitted Python snippets. The backend exposes a minimal API (Flask) that validates and runs code in a constrained environment (optionally via nsjail). The frontend (React + Vite + TypeScript) provides a simple UI to enter a script, run it, and view both the return value and captured stdout.
 
+## 🚀 Live Demo
+
+**Frontend**: [https://stacksync-assessment.vercel.app/](https://stacksync-assessment.vercel.app/)
+
 ---
 
 ## Features
 
 - **Safe execution**: Requires a `main()` function, enforces size/time limits, blocks dangerous patterns.
-- **Optional sandboxing**: Uses `nsjail` when built for cloud to chroot and restrict the runtime.
+- **Secure sandboxing**: Uses `nsjail` when built for cloud to chroot and restrict the runtime with no fallback modes.
+- **Cloud-native**: Optimized for Cloud Run/gVisor environments with direct nsjail execution.
 - **Batteries included**: Supports common libraries like `numpy` and `pandas` (see limits below).
 - **Simple UI**: Web editor with example scripts and instant results.
 
@@ -15,10 +20,10 @@ A small full‑stack project that safely executes user‑submitted Python snippe
 
 ## Architecture
 
-- **Backend**: Flask app exposing REST endpoints. Runs scripts either directly (local/dev) or inside `nsjail` (`BUILD=cloud`).
+- **Backend**: Flask app exposing REST endpoints. Runs scripts either directly (local/dev) or inside `nsjail` sandbox (`BUILD=cloud`).
   - Code: `backend/main.py`
   - Images: `backend/Dockerfile.local` (local/dev), `backend/Dockerfile.cloud` (cloud with nsjail)
-  - Sandbox config: `backend/nsjail.cfg`
+  - Sandbox config: `backend/nsjail.cfg` (defines chroot environment and security policies)
 - **Frontend**: React + Vite + TypeScript single‑page app.
   - Code: `frontend/src/`
   - Dev server: Vite on port 3000
@@ -119,7 +124,7 @@ A `docker-compose.yml` is present, but the frontend service expects a `frontend/
 
 ### Backend
 
-- `BUILD` (local|cloud): toggles nsjail usage (`cloud` enables nsjail). Default varies by image.
+- `BUILD` (local|cloud): toggles execution mode (`cloud` enables strict nsjail sandboxing, `local` uses direct execution). Default varies by image.
 - `PORT` (default: 8080)
 - `FLASK_DEBUG` (default: false)
 - `SCRIPT_TIMEOUT` seconds (default: 10)
@@ -193,8 +198,10 @@ The backend enforces several safety checks before execution (`backend/main.py`):
 
 When `BUILD=cloud`, the app runs code via `nsjail` using `backend/nsjail.cfg`:
 
-- Chroot to `/sandbox` with minimal libraries and Python stdlib copied in the image.
-- Limited file descriptors, CPU, memory, and syscalls for compatibility in managed environments.
+- **Secure isolation**: Scripts execute in a chroot environment at `/sandbox` with minimal libraries
+- **Resource limits**: Restricted file descriptors, CPU, memory, and execution time
+- **Cloud-compatible**: Configured for Cloud Run/gVisor environments with simplified security policies
+- **No fallbacks**: Direct nsjail execution only - no fallback to unsandboxed execution for maximum security
 
 Allowed libraries (typical usage): `numpy`, `pandas`, `json`, `math`, `random`, `datetime`.
 
@@ -230,7 +237,9 @@ frontend/
 ## Deployment notes
 
 - The cloud image (`Dockerfile.cloud`) compiles and embeds `nsjail`, copies a minimal Python runtime into `/sandbox`, and runs via gunicorn.
-- You can adapt `backend/deploy-cloud.sh` or your platform’s workflow (e.g., Cloud Run) to push and deploy the `:cloud` image.
+- **Security-first**: No fallback execution modes - scripts run exclusively in nsjail sandbox when `BUILD=cloud`
+- **Cloud Run ready**: Optimized for managed container environments with appropriate security restrictions
+- You can adapt `backend/deploy-cloud.sh` or your platform's workflow (e.g., Cloud Run) to push and deploy the `:cloud` image.
 
 Health probe example:
 
