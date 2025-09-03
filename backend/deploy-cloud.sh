@@ -23,8 +23,8 @@ echo "   Image: $IMAGE_NAME"
 echo ""
 
 # Build with specific Dockerfile and BUILD argument
-echo "🔨 Building Docker image with Dockerfile.cloud..."
-docker build -f Dockerfile.cloud --build-arg BUILD=cloud -t gcr.io/$PROJECT_ID/$IMAGE_NAME .
+echo "🔨 Building Docker image with Dockerfile..."
+docker build -f Dockerfile --build-arg BUILD=cloud -t gcr.io/$PROJECT_ID/$IMAGE_NAME .
 
 # Push to registry
 echo "📤 Pushing image to Google Container Registry..."
