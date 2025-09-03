@@ -1,0 +1,15 @@
+blinker
+click
+colorama
+Flask
+flask-cors
+itsdangerous
+Jinja2
+MarkupSafe
+numpy
+pandas
+python-dateutil
+pytz
+six
+tzdata
+Werkzeug
