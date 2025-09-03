@@ -108,6 +108,8 @@ function App() {
     setError(null);
     setResult(null);
 
+    console.log('Executing script:', script);
+
     try {
       const response = await axios.post<ExecutionResult>(`${apiUrl}/execute`, {
         script: script
