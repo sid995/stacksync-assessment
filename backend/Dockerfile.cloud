@@ -1,9 +1,9 @@
-# Use Python 3.11 slim image for smaller size
+# Production Dockerfile with full nsjail security for cloud deployment
 FROM python:3.11-slim
 
 # Install system dependencies for nsjail and required libraries
 RUN apt-get update && apt-get install -y \
-    # Build tools
+    # Build tools for nsjail
     build-essential \
     pkg-config \
     # nsjail dependencies
@@ -30,29 +30,37 @@ RUN git clone https://github.com/google/nsjail.git /tmp/nsjail && \
     cp nsjail /usr/local/bin/ && \
     rm -rf /tmp/nsjail
 
+# Create a non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 # Set working directory
 WORKDIR /app
 
 # Copy requirements first for better Docker layer caching
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY . .
+COPY backend/ .
 
 # Copy nsjail configuration for cloud environment
-COPY nsjail.local.cfg /etc/nsjail.cfg
+COPY backend/nsjail.cloud.cfg /etc/nsjail.cfg
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /tmp /sandbox/tmp && \
-    chmod 755 /tmp /sandbox /sandbox/tmp
+    chmod 755 /tmp /sandbox /sandbox/tmp && \
+    chown -R appuser:appuser /app /tmp /sandbox
 
-# Set environment variables
-ENV BUILD=local
+# Set environment variables for production
+ENV BUILD=cloud
 ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8080

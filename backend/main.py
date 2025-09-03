@@ -1,8 +1,6 @@
 import ast
 import os
 import json
-import tempfile
-import uuid
 import subprocess
 
 from flask import Flask, request, jsonify
