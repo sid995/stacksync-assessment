@@ -2,7 +2,6 @@ import { useState } from 'react';
 import axios, { AxiosError } from 'axios';
 
 const DEFAULT_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-console.log(DEFAULT_API_URL);
 
 interface ExecutionResult {
   result: unknown;
