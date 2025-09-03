@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
+import axios, { AxiosError } from 'axios';
 
-const DEFAULT_API_URL = 'http://localhost:8080';
+const DEFAULT_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+console.log(DEFAULT_API_URL);
 
 interface ExecutionResult {
   result: unknown;
@@ -18,7 +19,7 @@ interface ExampleScript {
   code: string;
 }
 
-const examples = [
+const examples: ExampleScript[] = [
   {
     title: 'Simple Hello World',
     description: 'Basic function that returns a JSON object',
@@ -98,7 +99,7 @@ function App() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const executeScript = async () => {
+  const executeScript = async (): Promise<void> => {
     if (!script.trim()) {
       setError('Please enter a Python script');
       return;
@@ -109,7 +110,7 @@ function App() {
     setResult(null);
 
     try {
-      const response = await axios.post(`${apiUrl}/execute`, {
+      const response = await axios.post<ExecutionResult>(`${apiUrl}/execute`, {
         script: script
       }, {
         headers: {
@@ -119,30 +120,34 @@ function App() {
       });
 
       setResult(response.data);
-    } catch (err: any) {
-      // If the error object has a 'response' property, it means the server responded with an error status
-      if (err.response) {
-        // Set the error message from the server's response, or use a generic message if not available
-        setError(err.response.data.error || 'Server error occurred');
-      } else if (err.request) {
-        // If the error object has a 'request' property, it means the request was made but no response was received
-        setError('Could not connect to the API. Please check the URL and try again.');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const axiosError = err as AxiosError<ApiErrorResponse>;
+        
+        if (axiosError.response) {
+          const errorData = axiosError.response.data;
+          setError(errorData?.error || 'Server error occurred');
+        } else if (axiosError.request) {
+          setError('Could not connect to the API. Please check the URL and try again.');
+        } else {
+          setError('An unexpected error occurred: ' + axiosError.message);
+        }
       } else {
-        // For any other type of error, display a generic unexpected error message
-        setError('An unexpected error occurred: ' + err.message);
+        const unknownError = err as Error;
+        setError('An unexpected error occurred: ' + unknownError.message);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const clearScript = () => {
+  const clearScript = (): void => {
     setScript('');
     setResult(null);
     setError(null);
   };
 
-  const tryExample = (exampleCode: React.SetStateAction<string>) => {
+  const tryExample = (exampleCode: string): void => {
     setScript(exampleCode);
     setResult(null);
     setError(null);
